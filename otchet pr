@@ -1,0 +1,278 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{indentfirst}
+\usepackage{misccorr}
+\usepackage{amsmath}
+\usepackage{float}
+\begin{document}
+  \begin{titlepage}
+    \begin{center}
+      \large
+      МИНИСТЕРСТВО НАУКИ И ВЫСШЕГО ОБРАЗОВАНИЯ РОССИЙСКОЙ ФЕДЕРАЦИИ
+      
+      Федеральное государственное бюджетное образовательное учреждение высшего образования
+      
+      \textbf{АДЫГЕЙСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ}
+      \vspace{0.25cm}
+      
+      Инженерно-физический факультет
+      
+      Кафедра автоматизированных систем обработки информации и управления
+      \vfill
+
+      \vfill
+      
+      \textsc{Отчет по практике}\\[5mm]
+      
+      {\LARGE Программаная реализация численного метода \textit{Текст из задания по варианту.}}
+      \bigskip
+      
+      1 курс, группа 1ИВТ АСОИУ
+    \end{center}
+    \vfill
+    
+    \newlength{\ML}
+    \settowidth{\ML}{«\underline{\hspace{0.7cm}}» \underline{\hspace{2cm}}}
+    \hfill\begin{minipage}{0.5\textwidth}
+      Выполнил:\\
+      \underline{\hspace{\ML}}В.\,А.~Сапунов\\
+      «06» \,06. 2024 г.
+    \end{minipage}%
+    \bigskip
+    
+    \hfill\begin{minipage}{0.5\textwidth}
+      Руководитель:\\
+      \underline{\hspace{\ML}} С.\,В.~Теплоухов\\
+      «06» \,06. 2024 г.
+    \end{minipage}%
+    \vfill
+    
+    \begin{center}
+      Майкоп, 2024 г.
+    \end{center}
+  \end{titlepage}
+ \section{Введение}
+\label{sec:intro}
+% Что должно быть во введении
+\begin{enumerate}
+ \item Вариант 5 - Вычислить матрицу обратную заданной.
+ \item Пример кода, решающего данную задачу
+ \item График
+ \item Скриншот программы
+\end{enumerate}
+
+
+\section{Ход работы}
+\label{sec:exp}
+
+\subsection{Код приложения}
+\label{sec:exp:code}
+\begin{verbatim}
+#include <iostream>
+#include <vector>
+#include <iomanip>
+#include <limits>
+
+using namespace std;
+
+void printMatrix(const vector<vector<double>>& matrix) {
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            cout << setw(8) << matrix[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+vector<vector<double>> inverseMatrix(vector<vector<double>>& matrix) {
+    int n = matrix.size();
+
+    vector<vector<double>> extendedMatrix(n, vector<double>(2 * n));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            extendedMatrix[i][j] = matrix[i][j];
+        }
+        extendedMatrix[i][i + n] = 1;
+    }
+
+    for (int i = 0; i < n; i++) {
+        int pivotRow = i;
+        while (pivotRow < n && abs(extendedMatrix[pivotRow][i]) < 1e-6) {
+            pivotRow++;
+        }
+
+        if (pivotRow == n) {
+            continue;
+        }
+
+        if (pivotRow != i) {
+            swap(extendedMatrix[i], extendedMatrix[pivotRow]);
+        }
+
+        double pivot = extendedMatrix[i][i];
+        for (int j = i; j < 2 * n; j++) {
+            extendedMatrix[i][j] /= pivot;
+        }
+
+        for (int k = i + 1; k < n; k++) {
+            double factor = extendedMatrix[k][i];
+            for (int j = i; j < 2 * n; j++) {
+                extendedMatrix[k][j] -= factor * extendedMatrix[i][j];
+            }
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        bool allZero = true;
+        for (int j = 0; j < n; j++) {
+            if (abs(extendedMatrix[i][j]) > 1e-6) {
+                allZero = false;
+                break;
+            }
+        }
+        if (allZero) {
+            cout << "Матрица вырождена! Обратная матрица не существует." << endl;
+            return {};
+        }
+    }
+
+    for (int i = n - 1; i >= 0; i--) {
+        // Обнуление элементов над ведущим элементом
+        for (int k = i - 1; k >= 0; k--) {
+            double factor = extendedMatrix[k][i];
+            for (int j = i; j < 2 * n; j++) {
+                extendedMatrix[k][j] -= factor * extendedMatrix[i][j];
+            }
+        }
+    }
+
+    vector<vector<double>> inverse(n, vector<double>(n));
+    for (int i = 0; i < n; i++) {
+        for (int j = n; j < 2 * n; j++) {
+            inverse[i][j - n] = extendedMatrix[i][j];
+        }
+    }
+
+    return inverse;
+}
+
+int main() {
+    setlocale(0, "ru");
+    int choice;
+    int n;
+    vector<vector<double>> matrix;
+
+    do {
+        cout << "\nМеню:" << endl;
+        cout << "1. Ввести новую матрицу" << endl;
+        cout << "2. Найти обратную матрицу" << endl;
+        cout << "3. Выход" << endl;
+        cout << "Введите ваш выбор: ";
+        cin >> choice;
+        vector<vector<double>> inverse = inverseMatrix(matrix);
+        switch (choice) {
+        case 1:
+            cout << "Введите размерность матрицы: ";
+            cin >> n;
+
+            if (n <= 0) {
+                cout << "Некорректная размерность матрицы! Введите положительное число." << endl;
+                break;
+            }
+
+            matrix.resize(n, vector<double>(n));
+            cout << "Введите элементы матрицы:" << endl;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (!(cin >> matrix[i][j])) {
+                        cout << "Ошибка ввода данных! Введите числовые значения." << endl;
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        break;
+                    }
+                }
+            }
+            cout << "Исходная матрица:" << endl;
+            printMatrix(matrix);
+            break;
+
+        case 2:
+            if (matrix.empty()) {
+                cout << "Сначала введите матрицу." << endl;
+                break;
+            }
+            if (inverse.empty()) {
+                cout << "Обратная матрица не существует!" << endl;
+            }
+            else {
+                cout << "Обратная матрица:" << endl;
+                printMatrix(inverse);
+            }
+            break;
+
+        case 3:
+            cout << "Выход из программы." << endl;
+            break;
+
+        default:
+            cout << "Неверный выбор!" << endl;
+        }
+    } while (choice != 3);
+
+    return 0;
+}
+
+\end{verbatim}
+
+\subsection{Метод вычисления обратной матрицы}
+\label{sec:mathexample}
+
+Вычисление обратной матрицы
+([[1. -2.  1.]
+ [2.  1. -1.]
+ [3.  2. -2.]]):
+\begin{verbatim}
+Алгоритм нахождения обратной матрицы методом исключения неизвестных Гаусса:
+1. К матрице A приписать единичную матрицу того же порядка.
+2. Полученную сдвоенную матрицу преобразовать так, чтобы в левой её части получилась единичная матрица, тогда в правой части на месте единичной матрицы автоматически получится обратная матрица. Матрица A в левой части преобразуется в единичную матрицу путём элементарных преобразований матрицы.
+3. Если в процессе преобразования матрицы A в единичную матрицу в какой-либо строке или в каком-либо столбце окажутся только нули, то определитель матрицы равен нулю, и, следовательно, матрица A будет вырожденной, и она не имеет обратной матрицы. В этом случае дальнейшее нахождение обратной матрицы прекращается.
+
+\end{verbatim}
+
+\section{Изображение с примером нахождения ранга матрицы и результат выполнения программы}
+\label{sec:picexample}
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.7\textwidth]{Primer.jpg}
+	\caption{Ранг матрицы}\label{fig:par}
+\end{figure}
+Пример вычисления обратной матрицы представлен на рис.~\ref{fig:par}.
+
+Результат выполнения программы представлен на рис.~\ref{fig:par2}.
+\label{sec:picexample}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{result.jpg}
+	\caption{Результат выполнения программы}\label{fig:par2}
+\end{figure}
+
+
+
+\section{Пример библиографических ссылок}
+
+Для изучения «внутренностей» \TeX{} необходимо 
+изучить~\cite{Knuth-2003}, а для использования \LaTeX{} лучше
+почитать~\cite{Lvovsky-2003, Voroncov-2005}.
+
+\begin{thebibliography}{9}
+\bibitem{Knuth-2003}Кнут Д.Э. Всё про \TeX. \newblock --- Москва: Изд. Вильямс, 2003 г. 550~с.
+\bibitem{Lvovsky-2003}Львовский С.М. Набор и верстка в системе \LaTeX{}. \newblock --- 3-е издание, исправленное и дополненное, 2003 г.
+\bibitem{Voroncov-2005}Воронцов К.В. \LaTeX{} в примерах. 2005 г.
+\end{thebibliography}
+
+\end{document}
